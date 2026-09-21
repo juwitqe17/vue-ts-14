@@ -1,101 +1,197 @@
+```vue
 <script setup lang="ts">
-
-//import ref dan onMounted dari Vue
 import { ref, onMounted } from "vue";
-
-//import service api
 import Api from "../../api";
 
-// Interface Product
+// Interface Category
 interface Kategori {
     id: number;
     name: string;
 }
 
-// State products
-const Kategoris = ref<Kategori[]>([]);
+// State categories
+const categories = ref<Kategori[]>([]);
+const loading = ref(false);
+const errorMessage = ref("");
 
-// Fetch data products dari API
-const fetchDataKategoris = async () => {
+// Fetch data categories dari API
+const fetchDataCategories = async () => {
+    loading.value = true;
+    errorMessage.value = "";
+
     try {
-
-        //fetch data products dari API
         const response = await Api.get("/api/kategoris");
 
-        //set data products
-        Kategoris.value = response.data.data || response.data;
-
+        categories.value = response.data.data || response.data;
     } catch (error) {
-
-        //log error
         console.error("Error fetching categories:", error);
+        errorMessage.value = "Gagal mengambil data categories.";
+    } finally {
+        loading.value = false;
     }
 };
 
-//run hook "onMounted"
-onMounted(() => {
-
-    //call method "fetchDataPosts"
-    fetchDataKategoris();
-});
-
-// Handle delete product
+// Delete category
 const deleteKategori = async (id: number) => {
-  try {
+    const confirmed = confirm("Yakin ingin menghapus category ini?");
 
-    //delete product berdasarkan id
-    await Api.delete(`/api/kategoris/${id}`);
+    if (!confirmed) return;
 
-    //call method "fetchDataPosts"
-    fetchDataKategoris();
+    try {
+        await Api.delete(`/api/kategoris/${id}`);
 
-  } catch (error) {
-
-    //log error
-    console.error("Error deleting kategori:", error);
-  }
+        fetchDataCategories();
+    } catch (error) {
+        console.error("Error deleting kategori:", error);
+        alert("Gagal menghapus category.");
+    }
 };
+
+// Run hook onMounted
+onMounted(() => {
+    fetchDataCategories();
+});
 </script>
 
 <template>
-    <div class="container mt-5 mb-5">
-        <div class="row">
-            <div class="col-md-12">
-                <router-link to="/categories/create" class="btn btn-md btn-success rounded-5 shadow border-0 mb-3">
-                    ADD NEW CATEGORY
-                </router-link>
-                <div class="card border-0 rounded-3 shadow">
-                    <div class="card-body">
-                        <table class="table table-bordered">
-                            <thead class="bg-dark text-white">
-                                <tr>
-                                    <th scope="col">Category Name</th>
-                                    <th scope="col" style="width: 15%">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="Kategoris.length === 0">
-                                    <td colspan="6" class="text-center">
-                                        <div class="alert alert-danger mb-0">No data available</div>
-                                    </td>
-                                </tr>
-                                <tr v-for="kategori in Kategoris" :key="kategori.id">
-                                    <td>{{ kategori.name }}</td>
-                                    <td class="text-center">
-                                        <router-link :to="`/categories/edit/${kategori.id}`"
-                                            class="btn btn-sm btn-primary rounded-5 shadow border-0 me-2">
-                                            EDIT
-                                        </router-link>
-                                        <button @click="deleteKategori(kategori.id)" class="btn btn-sm btn-danger rounded-5 shadow border-0">
-                                            DELETE
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="container py-5">
+
+        <!-- Header -->
+        <div
+            class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4"
+        >
+            <div>
+                <h2 class="fw-bold mb-1">Categories</h2>
+
+                <p class="text-secondary mb-0">
+                    Manage your product categories.
+                </p>
+            </div>
+
+            <router-link
+                to="/categories/create"
+                class="btn btn-success px-4"
+            >
+                + Add Category
+            </router-link>
+        </div>
+
+        <!-- Error -->
+        <div
+            v-if="errorMessage"
+            class="alert alert-danger"
+        >
+            {{ errorMessage }}
+        </div>
+
+        <!-- Category Table -->
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-semibold">
+                    Category List
+                </h6>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 8%">#</th>
+                            <th>Category Name</th>
+                            <th
+                                class="text-center"
+                                style="width: 20%"
+                            >
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        <!-- Loading -->
+                        <tr v-if="loading">
+                            <td
+                                colspan="3"
+                                class="text-center py-5"
+                            >
+                                <div
+                                    class="spinner-border spinner-border-sm text-success me-2"
+                                ></div>
+
+                                Loading categories...
+                            </td>
+                        </tr>
+
+                        <!-- Empty -->
+                        <tr
+                            v-else-if="categories.length === 0"
+                        >
+                            <td
+                                colspan="3"
+                                class="text-center py-5"
+                            >
+                                <div class="text-secondary">
+
+                                    <div class="fs-4 mb-2">
+                                        🗂️
+                                    </div>
+
+                                    <div class="fw-semibold">
+                                        No categories found
+                                    </div>
+
+                                    <small>
+                                        Belum ada data category.
+                                    </small>
+
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Categories -->
+                        <tr
+                            v-else
+                            v-for="(kategori, index) in categories"
+                            :key="kategori.id"
+                        >
+                            <td class="text-secondary">
+                                {{ index + 1 }}
+                            </td>
+
+                            <td>
+                                <span class="fw-semibold">
+                                    {{ kategori.name }}
+                                </span>
+                            </td>
+
+                            <td class="text-center">
+
+                                <router-link
+                                    :to="`/categories/edit/${kategori.id}`"
+                                    class="btn btn-sm btn-outline-primary me-1"
+                                >
+                                    Edit
+                                </router-link>
+
+                                <button
+                                    @click="deleteKategori(kategori.id)"
+                                    class="btn btn-sm btn-outline-danger"
+                                >
+                                    Delete
+                                </button>
+
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
             </div>
         </div>
+
     </div>
 </template>
+```

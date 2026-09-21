@@ -26,6 +26,16 @@ const router = useRouter();
 // Handle submit form
 const storeKategori = async () => {
 
+    errors.value = {};
+
+    if(!name.value) {
+        errors.value.name = ["Name is required."];
+    }
+
+    if (Object.keys(errors.value).length > 0) {
+        return;
+    }
+
     //inisialisasi form data
     const formData = new FormData();
 

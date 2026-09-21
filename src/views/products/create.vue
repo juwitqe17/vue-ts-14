@@ -59,6 +59,27 @@ onMounted(() => {
 // Handle submit form
 const storeProduct = async () => {
 
+    errors.value = {};
+    if (!name.value) {
+        errors.value.name = ["Name is required."];
+    }
+    if (!description.value) {
+        errors.value.description = ["Description is required."];
+    }
+    if (!price.value) {
+        errors.value.price = ["Price is required."];
+    }
+    if (!stock.value) {
+        errors.value.stock = ["Stock is required."];
+    }
+    if (!id_kategori.value) {
+        errors.value.id_kategori = ["Category is required."];
+    }
+
+    if(Object.keys(errors.value).length > 0) {
+        return;
+    }
+
     //inisialisasi form data
     const formData = new FormData();
 
